@@ -4,6 +4,8 @@ const jwt = require('jsonwebtoken');
 const userModel = require('../model/User.js')
 const PASSWORD_REGEX = /^(?=.*\d)(?=.*[a-z])(?=.*[A-Z]).{8,20}$/;
 const argon2 = require('argon2');
+const verifyAccessToken = require('../middleware/verifyToken.js');
+const user = require('../model/User.js');
 //regex kiểm tra password có 1 in hoa, 1 thường, số và 8 ký tự
 
 
@@ -36,6 +38,7 @@ authRouter.post('/register', async (req, res, next) => {
 
     await userModel.findUser(username, async (err, result) => {
         if(err){
+            console.log(err)
             return res.status(500).json({
                 code: 1,
                 success: false,
@@ -129,6 +132,67 @@ authRouter.post('/login', async (req, res, next ) => {
                 });
             }
         })
+    })
+})
+
+authRouter.post('/changePassword', verifyAccessToken, async (req, res) => {
+    let username = req.user;
+    let currentPassword = req.body.currentPassword;
+    let newPassword = req.body.newPassword;
+
+    if(!currentPassword || !newPassword){
+        return res.status(200).json({
+            code: 3,
+            success: false,
+            message: "Bạn nhập thiếu thông tin",
+            data: null
+        });
+    }
+
+    if(!PASSWORD_REGEX.test(newPassword)){
+        return res.status(200).json({
+            code: 3,
+            success: false,
+            message: "Mật khẩu mới không đúng yêu cầu",
+            data: null
+        });
+    }
+    
+    await userModel.findPassword(username, async (err, result) => {
+        if(err){
+            return res.status(500).json({
+                code: 1,
+                success: false,
+                message: "Lỗi server",
+                data: null
+            });
+        }
+        if(await argon2.verify(result[0].password, currentPassword) == false){
+            return res.status(200).json({
+                code: 3,
+                success: true,
+                message: "Mật khẩu không chính xác",
+                data: null
+            });
+        }
+        await userModel.changePassword(req.body, username, async (err, result) => {
+            if(err){
+                return res.status(500).json({
+                    code: 1,
+                    success: false,
+                    message: "Lỗi server",
+                    data: null
+                });  
+            }
+            return res.status(200).json({
+                code: 0,
+                success: true,
+                message: "Thay đổi mật khẩu thành công",
+                data: null
+            });
+            
+        })
+
     })
 })
 

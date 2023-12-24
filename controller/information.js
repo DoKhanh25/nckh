@@ -59,8 +59,6 @@ infoRouter.post('/info', verifyToken, async (req, res) => {
                 message: "",
                 data: "ok"
         });
-        
-       
     })
 
 })

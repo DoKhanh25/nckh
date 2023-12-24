@@ -1,8 +1,8 @@
-const mysql = require('mysql')
+const mysql = require('mysql2')
 class Model {
     connection = mysql.createPool({
         host     : 'localhost',
-        port     : '3310',
+        port     : '3306',
         user     : 'root',
         password : '123456a@',
         database: 'nckh2023',
