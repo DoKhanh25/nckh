@@ -214,6 +214,35 @@ accountInfoRouter.get('/info', verifyToken, async (req, res) => {
     })
 })
 
+accountInfoRouter.get('/allInfo', async (req, res) => {
+    await infoModel.getAllInformation(async (err, result) => {
+        if(err){
+            return res.status(500).json({
+                code: 1,
+                success: false,
+                message: "Lỗi server",
+                data: null
+            });
+        }
+        if(result[0]){
+            console.log(result[0])
+            return res.status(200).json({
+                code: 0,
+                success: true,
+                message: "Có thông tin",
+                data: result
+            });
+        }
+        else {
+            return res.status(200).json({
+                code: 3,
+                success: false,
+                message: "Chưa có thông tin",
+                data: null
+            }); 
+        }
+    })
+})
 
 accountInfoRouter.post('/info', verifyToken, async(req, res) => {
     let username = req.user;

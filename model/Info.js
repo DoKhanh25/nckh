@@ -8,6 +8,11 @@ class Info extends Model{
         this.connection.query({ sql: query, values: [username]}, callback);
     }
 
+    getAllInformation = async (callback) => {
+        let query = "select username from account_info";
+        this.connection.query({ sql: query}, callback);
+    }
+
     createAuthorInformation = async (obj, callback) => {
         let query = "insert into account_info (username, fullname, email, birthday, job, organization, address) values ";
         query += "(? , ?, ?, ?, ?, ?, ?)"
