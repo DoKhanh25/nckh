@@ -9,15 +9,15 @@ class Info extends Model{
     }
 
     getAllInformation = async (callback) => {
-        let query = "select username from account_info";
+        let query = "select username, fullname, avatar from account_info";
         this.connection.query({ sql: query}, callback);
     }
 
     createAuthorInformation = async (obj, callback) => {
-        let query = "insert into account_info (username, fullname, email, birthday, job, organization, address) values ";
-        query += "(? , ?, ?, ?, ?, ?, ?)"
+        let query = "insert into account_info (username, fullname, email, birthday, job, organization, address, avatar) values ";
+        query += "(? , ?, ?, ?, ?, ?, ?, ?)"
         this.connection.query({ sql: query, values: [
-            obj.username, obj.fullname, obj.email, this.toSqlDatetime(obj.birthday), obj.job, obj.organization, obj.address
+            obj.username, obj.fullname, obj.email, this.toSqlDatetime(obj.birthday), obj.job, obj.organization, obj.address, obj.avatar
         ]}, callback);
     }
 
