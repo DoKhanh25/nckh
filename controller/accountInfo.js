@@ -39,7 +39,7 @@ accountInfoRouter.get('/info', verifyToken, async (req, res) => {
     })
 })
 
-accountInfoRouter.get('/allInfo', async (req, res) => {
+accountInfoRouter.get('/allInfo', verifyToken ,async (req, res) => {
     await infoModel.getAllInformation(async (err, result) => {
         if(err){
             return res.status(500).json({
