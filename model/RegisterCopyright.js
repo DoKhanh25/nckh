@@ -8,6 +8,23 @@ class RegisterCopyright extends Model{
       this.connection.query({sql: query, values: [obj.title, obj.destination, this.toSqlDatetime(Date.now()), obj.registerName, obj.authorIds, obj.note] }, callback)
     }
 
+    getCopyrightByUsername = async (username, callback) => {
+      let query = "select paper_pk.username, paper_pk.status, paper.title, paper.note, paper.author_identity, paper.updateTime, paper.updateBy";
+      query += " from paper_pk inner join paper on paper_pk.paper_id = paper.id";
+      query += " where paper_pk.username = ?";
+      this.connection.query({sql: query, values: [username] }, callback);
+    }
+
+    insertDataToPaper_PK = async (authorAccs, paperId, callback) => {
+      let query = "insert into paper_pk (username, paper_id, ownership, status) values (?, ?, ?, ?)";
+      
+      authorAccs.forEach(element => {
+        this.connection.query({sql: query, values: [element, paperId, 1, 0 ]}, callback);
+      });
+      
+
+    }
+
     // insertPaper_pk = async (obj, callback) => {
     //   let query = "insert into paper_pk (username, paper_id, ownership, status) "
     // }
