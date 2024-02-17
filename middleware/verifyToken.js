@@ -15,6 +15,7 @@ const verifyAccessToken =  (req, res, next) =>{
         const decode = jwt.verify(token, process.env.JWT_PRIVATE_RAW);
     
         req.user = decode.username;
+        req.role = decode.role;
         next()
     } catch (error) {
         console.log(error);

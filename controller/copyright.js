@@ -3,7 +3,9 @@ const registerCopyrightRouter = express.Router();
 const registerCopyrightModel = require('../model/RegisterCopyright.js');
 const verifyToken = require('../middleware/verifyToken.js');
 const multer = require('multer');
-
+const fs = require('fs')
+const path = require('path');
+const { log, error } = require('console');
 
 const storage = multer.diskStorage({
     destination: function (req, file, cb) {
@@ -40,6 +42,8 @@ registerCopyrightRouter.get('/getCopyrightInfo', verifyToken, async (req, res) =
         }
     } ) 
 })
+
+
 
 registerCopyrightRouter.post('/uploadFile', verifyToken, type , async (req, res) => {
 
@@ -108,6 +112,156 @@ registerCopyrightRouter.post('/uploadFile', verifyToken, type , async (req, res)
     })
 
     
+})
+
+
+registerCopyrightRouter.get('/admin/getAllRegister', verifyToken, async (req, res) => {
+    let username = req.user;
+    let role = req.role;
+    if(role != 2){
+        return res.status(200).json({
+            code: 1,
+            success: false,
+            message: "Bạn không phải admin",
+            data: null
+        });
+    }
+
+    await registerCopyrightModel.getAllCopyright(async (err, result ) => {
+        if(err){
+            return res.status(500).json({
+                code: 1,
+                success: false,
+                message: "Lỗi server",
+                data: null
+            });
+        };
+        if(result){
+            return res.status(200).json({
+                code: 1,
+                success: true,
+                message: "Thành công",
+                data: result
+            });
+        }
+    })
+})
+
+registerCopyrightRouter.get('/getFile/:id', verifyToken, async (req, res) => {
+    console.log(req.params.id);
+    let fileId = req.params.id;
+    let role = req.role;
+    let username = req.user;
+
+    if(role == 2){
+        await registerCopyrightModel.getDownloadFilePath(fileId, async (err, result) => {
+            if(err){
+                return res.status(500).json({
+                    code: 1,
+                    success: false,
+                    message: "Lỗi server",
+                    data: null
+                });
+            };
+
+            console.log(result);
+            
+            let fileName = result[0].hashcode;
+            if(!fileName){
+                return res.status(200).json({
+                    code: 1,
+                    success: false,
+                    message: "Không dữ liệu",
+                    data: null
+                });
+            }
+            let file = path.join(__dirname, '..', '/document-uploads', fileName );
+                    res.download(file, function (error) {
+                        console.log("Error : ", error)
+            }); 
+        })
+    } else {
+        await registerCopyrightModel.getPaperIdByUsername(username, async (err, result) => {
+            if(err){
+                return res.status(500).json({
+                    code: 1,
+                    success: false,
+                    message: "Lỗi server",
+                    data: null
+                });
+            };
+
+            let idList = [];
+
+            result.forEach(element => {
+                idList.push(element.paper_id.toString());
+            });
+
+
+            if(idList.includes(fileId)){
+                await registerCopyrightModel.getDownloadFilePath(fileId, async (err, result) => {
+                    if(err){
+                        return res.status(500).json({
+                            code: 1,
+                            success: false,
+                            message: "Lỗi server",
+                            data: null
+                        });
+                    };
+
+                    let fileName = result[0].hashcode;
+                    if(!fileName){
+                        return res.status(200).json({
+                            code: 1,
+                            success: false,
+                            message: "Không dữ liệu",
+                            data: null
+                        });
+                    }
+               
+                    let file = path.join(__dirname, '..', '/document-uploads', fileName );
+                    res.download(file, function (error) {
+                        console.log("Error : ", error)
+                    }); 
+
+        
+                })
+            }
+
+        })
+    }
+})
+
+registerCopyrightRouter.post('/admin/acceptCopyright', verifyToken, async (req, res) => {
+    let username = req.user;
+    let role = req.role;
+    let paperId = req.body.id;
+    if(role != 2){
+        return res.status(200).json({
+            code: 1,
+            success: false,
+            message: "Bạn không phải admin",
+            data: null
+        });
+    }
+
+    await registerCopyrightModel.updateStatus(paperId, async (err, result) => {
+        if(err){
+            return res.status(500).json({
+                code: 1,
+                success: false,
+                message: "Lỗi server",
+                data: null
+            });
+        }
+
+        if(result){
+            // handle insert into blockchain and IPFS
+        }
+
+    })
+
+
 })
 
 module.exports = registerCopyrightRouter;
