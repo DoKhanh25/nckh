@@ -1,7 +1,6 @@
 const Model = require('./Model.js');
 const user = require('./User.js');
 
-
 class RegisterCopyright extends Model{
   
     createRegisterCopyright = async (obj, callback) => {
@@ -39,7 +38,11 @@ class RegisterCopyright extends Model{
     getPaperIdByUsername = async (username, callback) => {
       let query = "select paper_id from paper_pk where username = ?"
       this.connection.query({sql: query, values: [username ]}, callback);
+    }
 
+    getPaperByID = async(paperId, callback) => {
+      let query = "select * from paper where id = ?";
+      this.connection.query({sql: query, values: [paperId]}, callback);
     }
 
 

@@ -5,7 +5,9 @@ const verifyToken = require('../middleware/verifyToken.js');
 const multer = require('multer');
 const fs = require('fs')
 const path = require('path');
-const { log, error } = require('console');
+const blockchainGateway = require('../repository/Hyperledger/hyperledgerGateway.js')
+const ipfsRepository = require('../repository/IPFS/IPFSRepository.js')
+
 
 const storage = multer.diskStorage({
     destination: function (req, file, cb) {
@@ -256,7 +258,23 @@ registerCopyrightRouter.post('/admin/acceptCopyright', verifyToken, async (req, 
         }
 
         if(result){
+
+            await registerCopyrightModel.getPaperByID(paperId, async(err, rs) => {
+                if(err){
+                    return res.status(500).json({
+                        code: 1,
+                        success: false,
+                        message: "Lỗi server",
+                        data: null
+                    });
+                };
+                if(rs){
+                    const assetValue = rs[0];
+                    
+                }
+            })
             // handle insert into blockchain and IPFS
+
         }
 
     })
