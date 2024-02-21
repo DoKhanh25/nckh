@@ -6,7 +6,8 @@ const multer = require('multer');
 const fs = require('fs')
 const path = require('path');
 const blockchainGateway = require('../repository/Hyperledger/hyperledgerGateway.js')
-const ipfsRepository = require('../repository/IPFS/IPFSRepository.js')
+const ipfsRepository = require('../repository/IPFS/IPFSRepository.js');
+
 
 
 const storage = multer.diskStorage({
@@ -23,16 +24,11 @@ const upload = multer({ storage: storage});
 const type = upload.single('file');
 
 registerCopyrightRouter.get('/getCopyrightInfo', verifyToken, async (req, res) => {
+
     let username = req.user;
-    console.log(username);
-    await registerCopyrightModel.getCopyrightByUsername(username, async(err, result )=> {
+    await registerCopyrightModel.getCopyrightByUsername(username, async(err, result) => {
         if(err){
-            return res.status(500).json({
-                code: 1,
-                success: false,
-                message: "Lỗi server",
-                data: null
-            });
+            return serverErrorResponse(req, res, "Lỗi server");
         };
         if(result){
             return res.status(200).json({
@@ -80,24 +76,12 @@ registerCopyrightRouter.post('/uploadFile', verifyToken, type , async (req, res)
     }
     await registerCopyrightModel.createRegisterCopyright(obj, async (err, result) => {
         if(err){
-            return res.status(500).json({
-                code: 1,
-                success: false,
-                message: "Lỗi server",
-                data: null
-            });
+            serverErrorResponse(req, res, "Lỗi server");
         }
-
         let paperId = result.insertId; 
-        
         await registerCopyrightModel.insertDataToPaper_PK(authorAccounts.split(','), paperId, async (err, rs) => {
             if(err){
-                return res.status(500).json({
-                    code: 1,
-                    success: false,
-                    message: "Lỗi server",
-                    data: null
-                });
+                serverErrorResponse(req, res, "Lỗi server");
             }
             if(rs){
                 return res.status(200).json({
@@ -107,13 +91,8 @@ registerCopyrightRouter.post('/uploadFile', verifyToken, type , async (req, res)
                     data: "OK"
                 });
             }
-        })
-
-    
-        
+        })   
     })
-
-    
 })
 
 
@@ -131,12 +110,7 @@ registerCopyrightRouter.get('/admin/getAllRegister', verifyToken, async (req, re
 
     await registerCopyrightModel.getAllCopyright(async (err, result ) => {
         if(err){
-            return res.status(500).json({
-                code: 1,
-                success: false,
-                message: "Lỗi server",
-                data: null
-            });
+            serverErrorResponse(req, res, "Lỗi server");
         };
         if(result){
             return res.status(200).json({
@@ -150,7 +124,7 @@ registerCopyrightRouter.get('/admin/getAllRegister', verifyToken, async (req, re
 })
 
 registerCopyrightRouter.get('/getFile/:id', verifyToken, async (req, res) => {
-    console.log(req.params.id);
+
     let fileId = req.params.id;
     let role = req.role;
     let username = req.user;
@@ -158,39 +132,24 @@ registerCopyrightRouter.get('/getFile/:id', verifyToken, async (req, res) => {
     if(role == 2){
         await registerCopyrightModel.getDownloadFilePath(fileId, async (err, result) => {
             if(err){
-                return res.status(500).json({
-                    code: 1,
-                    success: false,
-                    message: "Lỗi server",
-                    data: null
-                });
+                return serverErrorResponse(req, res, "Lỗi server");
             };
-
-            console.log(result);
             
             let fileName = result[0].hashcode;
+
             if(!fileName){
-                return res.status(200).json({
-                    code: 1,
-                    success: false,
-                    message: "Không dữ liệu",
-                    data: null
-                });
+                return serverResponse(res, 200, 1, "Không có dữ liệu", null);
             }
+
             let file = path.join(__dirname, '..', '/document-uploads', fileName );
-                    res.download(file, function (error) {
-                        console.log("Error : ", error)
+                res.download(file, function (error) {
+                return serverErrorResponse(req, res, "Lỗi tải xuống");
             }); 
         })
     } else {
         await registerCopyrightModel.getPaperIdByUsername(username, async (err, result) => {
             if(err){
-                return res.status(500).json({
-                    code: 1,
-                    success: false,
-                    message: "Lỗi server",
-                    data: null
-                });
+                serverErrorResponse(req, res, "Lỗi server");
             };
 
             let idList = [];
@@ -203,27 +162,18 @@ registerCopyrightRouter.get('/getFile/:id', verifyToken, async (req, res) => {
             if(idList.includes(fileId)){
                 await registerCopyrightModel.getDownloadFilePath(fileId, async (err, result) => {
                     if(err){
-                        return res.status(500).json({
-                            code: 1,
-                            success: false,
-                            message: "Lỗi server",
-                            data: null
-                        });
+                        return serverErrorResponse(req, res, "Lỗi server");
                     };
 
                     let fileName = result[0].hashcode;
+
                     if(!fileName){
-                        return res.status(200).json({
-                            code: 1,
-                            success: false,
-                            message: "Không dữ liệu",
-                            data: null
-                        });
+                        return serverResponse(res, 200, 1, "Không có dữ liệu", null);
                     }
                
                     let file = path.join(__dirname, '..', '/document-uploads', fileName );
                     res.download(file, function (error) {
-                        console.log("Error : ", error)
+                        return serverErrorResponse(req, res, "Lỗi tải xuống");
                     }); 
 
         
@@ -239,41 +189,58 @@ registerCopyrightRouter.post('/admin/acceptCopyright', verifyToken, async (req, 
     let role = req.role;
     let paperId = req.body.id;
     if(role != 2){
-        return res.status(200).json({
-            code: 1,
-            success: false,
-            message: "Bạn không phải admin",
-            data: null
-        });
+        return serverResponse(res, 200, 1, "Bạn không phải admin", null);
     }
-
+    
     await registerCopyrightModel.updateStatus(paperId, async (err, result) => {
         if(err){
-            return res.status(500).json({
-                code: 1,
-                success: false,
-                message: "Lỗi server",
-                data: null
-            });
+            return serverErrorResponse(req, res, "Lỗi server");
         }
-
         if(result){
-
             await registerCopyrightModel.getPaperByID(paperId, async(err, rs) => {
                 if(err){
-                    return res.status(500).json({
-                        code: 1,
-                        success: false,
-                        message: "Lỗi server",
-                        data: null
-                    });
+                    return serverErrorResponse(req, res, "Lỗi server");
                 };
-                if(rs){
-                    const assetValue = rs[0];
-                    
+                // Xử lý đưa dữ liệu vào IPFS và Blockchain
+                if(rs){                    
+                    try {
+                        let filePath = path.join(__dirname, '..', '/document-uploads', rs[0].hashcode);
+                        let file = fs.createReadStream(filePath)
+
+                        const cid = await ipfsRepository.saveFile(file);
+                        
+                        let bcAsset = {
+                            title: rs[0].title,
+                            hashValue: cid.toString(),
+                            DOI: generateRandomCode(15),
+                            authorName: rs[0].author_identity,
+                            identity: rs[0].author_identity,
+                            acceptBy: username,
+                            updateTime: (new Date()).toISOString(),
+                            updateBy: rs[0].updateBy
+
+                        }
+
+                        await blockchainGateway.createAsset(bcAsset)
+                        .then((result) => {
+                            console.log(result)
+                            return res.status(200).json({
+                                code: 1,
+                                success: true,
+                                message: "Tạo bản quyền thành công",
+                                data: null
+                            });
+                        })
+                        .catch((err) => {
+                            return serverErrorResponse(req, res, "Lỗi thêm mới tài sản vào blockchain")
+                        })
+
+                    } catch (error) {
+                        return serverErrorResponse(req, res, "Lỗi đưa dữ liệu vào IPFS");
+                    }
                 }
+
             })
-            // handle insert into blockchain and IPFS
 
         }
 
@@ -282,4 +249,33 @@ registerCopyrightRouter.post('/admin/acceptCopyright', verifyToken, async (req, 
 
 })
 
+function generateRandomCode(length) {
+  const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+  let code = '';
+
+  for (let i = 0; i < length; i++) {
+    const randomIndex = Math.floor(Math.random() * characters.length);
+    code += characters.charAt(randomIndex);
+  }
+
+  return code;
+}
+
+function serverResponse(res, status, code, message, success, data){
+    return res.status(status).json({
+        code: code,
+        success: success,
+        message: message,
+        data: data
+    });
+}
+
+function serverErrorResponse(req, res, message){
+    return res.status(500).json({
+        code: 1,
+        success: false,
+        message: message,
+        data: null
+    });
+}
 module.exports = registerCopyrightRouter;

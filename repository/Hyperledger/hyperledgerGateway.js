@@ -1,4 +1,5 @@
 // config for gateway 
+const { log } = require('console');
 const fs = require('fs/promises');
 const path = require('path')
 
@@ -216,21 +217,12 @@ const hyperledgerGateway = {
         const network = gateway.getNetwork(channelName);
 
         const contract = network.getContract(chaincodeName);
-        await getAllAssets(contract).then(result => {
+        await readAssetByID(contract, id).then(result => {
             console.log(result)
         })
-        let result = await readAssetByID(contract, id);
-    
-        return result;
-    }
-
-
+        }
 
 }
-
-hyperledgerGateway.readAssetByID('asset2').catch(err => {
-    console.log(err)
-});
 
 async function displayInputParameters() {
     console.log(`channelName:       ${channelName}`);
@@ -247,7 +239,8 @@ async function displayInputParameters() {
 
 
 async function createAsset(contract, obj){
-    console.log('\n--> Submit Transaction: CreateAsset, creates new asset with ID, Color, Size, Owner and AppraisedValue arguments');
+    console.log('\n--> Submit Transaction: CreateAsset, creates new asset with arguments');
+    console.log(obj)
 
     await contract.submitTransaction(
         'CreateAsset',
@@ -261,6 +254,8 @@ async function createAsset(contract, obj){
         obj.updateTime,
         obj.updateBy
     );
+
+  
 
     console.log('*** Transaction committed successfully');
 }

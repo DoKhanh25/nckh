@@ -52,6 +52,7 @@ const IPFS = {
             const file = fs.cat(cid);
             return file;
         }
+        
     },
     saveFile: async function(file){
         const { FsBlockstore } = await import('blockstore-fs')

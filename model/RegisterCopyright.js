@@ -47,8 +47,8 @@ class RegisterCopyright extends Model{
 
 
     updateStatus = async (id, callback) => {
-      let query = "update status = 1 from paper where id = ?";
-      this.connection.query({sql: query, values: [id ]}, callback);
+      let query = "update paper set status = 1 where id = ?";
+      this.connection.query({sql: query, values: [id]}, callback);
     }
 
 
