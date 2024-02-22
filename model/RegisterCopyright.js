@@ -4,8 +4,8 @@ const user = require('./User.js');
 class RegisterCopyright extends Model{
   
     createRegisterCopyright = async (obj, callback) => {
-      let query = "insert into paper (title, hashcode, updateTime, updateBy, author_identity, note, status) values (?, ?, ?, ?, ?, ?, ?)";
-      this.connection.query({sql: query, values: [obj.title, obj.destination, this.toSqlDatetime(Date.now()), obj.registerName, obj.authorIds, obj.note, 0] }, callback)
+      let query = "insert into paper (title, path, updateTime, updateBy, author_identity, note, status, hashcode) values (?, ?, ?, ?, ?, ?, ?, ?)";
+      this.connection.query({sql: query, values: [obj.title, obj.destination, this.toSqlDatetime(Date.now()), obj.registerName, obj.authorIds, obj.note, 0, obj.hash] }, callback)
     }
 
     getCopyrightByUsername = async (username, callback) => {
@@ -21,16 +21,30 @@ class RegisterCopyright extends Model{
     }
 
     getDownloadFilePath = async (paperId, callback) => {
-      let query = "select hashcode from paper where id = ?";
+      let query = "select path from paper where id = ?";
       this.connection.query({sql: query, values: [paperId]}, callback);
     }
 
+    getHashFromPaper = async (callback) => {
+      let query = "select hashCode from paper";
+      this.connection.query({sql: query}, callback);
+    }
+
     insertDataToPaper_PK = async (authorAccs, paperId, callback) => {
-      let query = "insert into paper_pk (username, paper_id, ownership) values (?, ?, ?)";
+      let insertQuery = "insert into paper_pk (username, paper_id, ownership) values (?, ?, ?);";
+      let query = "";
+      let valueArray = [];
+      for(let i = 0; i < authorAccs.length; i++){
+        query = query  + insertQuery
+      }
       
       authorAccs.forEach(element => {
-        this.connection.query({sql: query, values: [element, paperId, 1 ]}, callback);
+        valueArray.push(element, paperId, 1);
       });
+      console.log(query)
+      console.log(valueArray)
+      this.connection.query({sql: query, values: valueArray}, callback);
+
     }
 
 
