@@ -8,7 +8,7 @@ const path = require('path');
 const blockchainGateway = require('../repository/Hyperledger/hyperledgerGateway.js')
 const ipfsRepository = require('../repository/IPFS/IPFSRepository.js');
 const crypto = require('crypto');
-
+const HyperledgerOptimizeGateWay = require('../repository/Hyperledger/hyperledgerGatewayOptimize.js')
 
 const storage = multer.diskStorage({
     destination: function (req, file, cb) {
@@ -303,8 +303,8 @@ registerCopyrightRouter.post('/admin/acceptCopyright', verifyToken, async (req, 
     if(role != 2){
         return serverResponse(res, 200, 1, "Bạn không phải admin", null);
     }
-    
-    await registerCopyrightModel.updateStatus(paperId, async (err, result) => {
+
+    await registerCopyrightModel.getStatusByPaperId(paperId, async (err, result) => {
         if(err){
             return res.status(500).json({
                 code: 1,
@@ -312,9 +312,16 @@ registerCopyrightRouter.post('/admin/acceptCopyright', verifyToken, async (req, 
                 message: "Lỗi server",
                 data: null
             });
-        }
-        if(result){
-            await registerCopyrightModel.getPaperByID(paperId, async(err, rs) => {
+        };
+        if(result[0].status == 1){
+            return res.status(200).json({
+                code: 1,
+                success: false,
+                message: "Bản quyền đã được duyệt",
+                data: null
+            });
+        } else {
+            await registerCopyrightModel.updateStatus(paperId, async (err, result) => {
                 if(err){
                     return res.status(500).json({
                         code: 1,
@@ -322,64 +329,81 @@ registerCopyrightRouter.post('/admin/acceptCopyright', verifyToken, async (req, 
                         message: "Lỗi server",
                         data: null
                     });
-                };
-// Xử lý đưa dữ liệu vào IPFS và Blockchain
-                if(rs){                    
-                    try {
-                        let filePath = path.join(__dirname, '..', '/document-uploads', rs[0].path);
-                        let file = fs.createReadStream(filePath)
-
-                        const cid = await ipfsRepository.saveFile(file);
-                        
-                        let bcAsset = {
-                            title: rs[0].title,
-                            hashValue: cid.toString(),
-                            DOI: generateRandomCode(15),
-                            authorName: rs[0].author_identity,
-                            identity: rs[0].author_identity,
-                            acceptBy: username,
-                            updateTime: (new Date()).toISOString(),
-                            updateBy: rs[0].updateBy
-
-                        }
-
-                        await blockchainGateway.createAsset(bcAsset)
-                        .then((result) => {
-
-                            console.log(result)
-                            return res.status(200).json({
-                                code: 1,
-                                success: true,
-                                message: "Tạo bản quyền thành công",
-                                data: null
-                            });
-                        })
-                        .catch((err) => {
+                }
+                if(result){
+                    await registerCopyrightModel.getPaperByID(paperId, async(err, rs) => {
+                        if(err){
                             return res.status(500).json({
                                 code: 1,
                                 success: false,
                                 message: "Lỗi server",
                                 data: null
                             });
-                        })
+                        };
+                        // Xử lý đưa dữ liệu vào IPFS và Blockchain
+                        if(rs){                    
+                            try {
+                                let filePath = path.join(__dirname, '..', '/document-uploads', rs[0].path);
+                                let file = fs.createReadStream(filePath)
+        
+                                const cid = await ipfsRepository.saveFile(file);
+                                
+                                let bcAsset = {
+                                    assetId: `asset${cid.toString()}`,
+                                    title: rs[0].title,
+                                    hashValue: cid.toString(),
+                                    DOI: generateRandomCode(15),
+                                    authorName: rs[0].author_identity,
+                                    identity: rs[0].author_identity,
+                                    acceptBy: username,
+                                    updateTime: (new Date()).toISOString(),
+                                    updateBy: rs[0].updateBy
+        
+                                }
+                                let hyperledgerGatewayOptimize =  await HyperledgerOptimizeGateWay.getInstance();
+                                await hyperledgerGatewayOptimize.connection();
 
-                    } catch (error) {
-                        return res.status(500).json({
-                            code: 1,
-                            success: false,
-                            message: "Lỗi server",
-                            data: null
-                        });
-                    }
+                                await hyperledgerGatewayOptimize.createAsset(bcAsset).then((result) => {
+                                    return res.status(200).json({
+                                        code: 1,
+                                        success: true,
+                                        message: "Tạo bản quyền thành công",
+                                        data: null
+                                    });
+                                })
+                                .catch(async (err) => {
+                                    if(err.code == 10){
+                                        await registerCopyrightModel.updataStatusTo0(paperId, (err, result) => {})
+                                        return res.status(200).json({
+                                            code: 1,
+                                            success: false,
+                                            message: "Bản quyền đã đăng kí trong hệ thống chung",
+                                            data: err.details[0].message
+                                        });
+                                        
+                                    }
+                                }).finally(() => {
+                                    hyperledgerGatewayOptimize.disconnect()
+                                })
+        
+                            } catch (error) {
+                                console.log(error)
+                                return res.status(500).json({
+                                    code: 1,
+                                    success: false,
+                                    message: "Lỗi server",
+                                    data: null
+                                });
+                            }
+                        }
+        
+                    })
+        
                 }
-
+        
             })
-
-        }
-
+        } 
     })
-
-
 })
 
 function generateRandomCode(length) {

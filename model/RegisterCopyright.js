@@ -65,6 +65,17 @@ class RegisterCopyright extends Model{
       this.connection.query({sql: query, values: [id]}, callback);
     }
 
+    updataStatusTo0 = async(id, callback) => {
+      let query = "update paper set status = 0 where id = ?";
+      this.connection.query({sql: query, values: [id]}, callback);
+    }
+
+
+    getStatusByPaperId = async (id, callback) => {
+      let query = "select status from paper where id = ?";
+      this.connection.query({sql: query, values: [id]}, callback);
+    }
+
 
     toSqlDatetime = (inputDate) => {
       const date = new Date(inputDate)

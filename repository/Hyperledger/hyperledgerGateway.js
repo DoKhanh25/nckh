@@ -31,9 +31,7 @@ const peerEndpoint = envOrDefault('PEER_ENDPOINT', '103.166.184.81:7051');
 // Gateway peer SSL host name override.
 const peerHostAlias = envOrDefault('PEER_HOST_ALIAS', 'peer0.org1.example.com');
 
-
 const utf8Decoder = new TextDecoder();
-const assetId = `asset${Date.now()}`;
 
 const hyperledgerGateway = {
     createAsset: async (obj) => {
@@ -90,18 +88,13 @@ const hyperledgerGateway = {
 
         const contract = network.getContract(chaincodeName);
 
-        await createAsset(contract, obj).then(
-            (result) => {
-                return result;
-            })
-            .catch((err) => {
-                console.log(err);
-                return false;
-            })
-            .finally(() => {
-                gateway.close();
-                client.close();
-            })      
+        await createAsset(contract, obj).then((res) => {
+            return res;
+        }).catch((err) => {throw err})
+        .finally(() => {
+            gateway.close();
+            client.close();
+        })
        
     },
     getAllAssets: async () => {
@@ -244,7 +237,7 @@ async function createAsset(contract, obj){
 
     await contract.submitTransaction(
         'CreateAsset',
-        assetId,
+        obj.assetId,
         obj.title,
         obj.hashValue,
         obj.DOI,
