@@ -3,7 +3,8 @@ const accountInfoRouter = express.Router();
 const jwt = require('jsonwebtoken');
 const userModel = require('../model/User.js')
 const verifyToken = require('../middleware/verifyToken.js')
-const infoModel = require('../model/Info.js')
+const infoModel = require('../model/Info.js');
+const { log } = require('@grpc/grpc-js/build/src/logging.js');
 
 
 
@@ -71,11 +72,14 @@ accountInfoRouter.get('/allInfo', verifyToken ,async (req, res) => {
 
 accountInfoRouter.post('/info', verifyToken, async(req, res) => {
     let username = req.user;
-    let { fullname, email, birthday, job, organization, address, avatar} = req.body;
+    let { fullname, email, birthday, job, organization, address, author_identity} = req.body;
     let obj = req.body;
     obj.username = username;
+    console.log("body", req.body)
 
-    if(!username || !fullname || !email || !birthday || !job || !organization || !address || !avatar){
+    if(isNullOrEmpty(username) || isNullOrEmpty(fullname) || isNullOrEmpty(email)
+    || !birthday || isNullOrEmpty(job) || isNullOrEmpty(organization)
+    || isNullOrEmpty(address) || isNullOrEmpty(author_identity)){
         return res.status(200).json({
             code: 3,
             success: false,
@@ -84,6 +88,7 @@ accountInfoRouter.post('/info', verifyToken, async(req, res) => {
         })
     }
     await infoModel.createAuthorInformation(obj, async(err, result)=> {
+        
         if(err){
             console.log(err)
             return res.status(500).json({
@@ -135,6 +140,12 @@ accountInfoRouter.put('/info', verifyToken, async(req, res) => {
     }) 
 })
 
+isNullOrEmpty = (value) =>{
+    if(value == null || value == ''){
+        return true;
+    }
+    return false;
+}
 
 //test
 module.exports = accountInfoRouter
