@@ -6,7 +6,8 @@ class Model {
         user     : 'root',
         password : '123456a@',
         database: 'nckh2023',
-        connectionLimit: 20
+        connectionLimit: 20,
+        multipleStatements: true
     })
     
 }

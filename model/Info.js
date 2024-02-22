@@ -4,20 +4,20 @@ const Model = require('./Model.js')
 class Info extends Model{
     
     getInformation = async (username, callback) => {
-        let query = "select fullname, email, birthday, job, organization, address, avatar from account_info where username = ?";
+        let query = "select fullname, email, birthday, job, organization, address, avatar, author_identity from account_info where username = ?";
         this.connection.query({ sql: query, values: [username]}, callback);
     }
 
     getAllInformation = async (callback) => {
-        let query = "select username, fullname, avatar from account_info";
+        let query = "select username, fullname, author_identity from account_info ";
         this.connection.query({ sql: query}, callback);
     }
 
     createAuthorInformation = async (obj, callback) => {
-        let query = "insert into account_info (username, fullname, email, birthday, job, organization, address, avatar) values ";
+        let query = "insert into account_info (username, fullname, email, birthday, job, organization, address, author_identity) values ";
         query += "(? , ?, ?, ?, ?, ?, ?, ?)"
         this.connection.query({ sql: query, values: [
-            obj.username, obj.fullname, obj.email, this.toSqlDatetime(obj.birthday), obj.job, obj.organization, obj.address, obj.avatar
+            obj.username, obj.fullname, obj.email, this.toSqlDatetime(obj.birthday), obj.job, obj.organization, obj.address, obj.author_identity
         ]}, callback);
     }
 

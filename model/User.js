@@ -5,7 +5,7 @@ const Model = require('./Model.js');
 class User extends Model{
 
   createUser = async (username, password, callback) => {
-    let stringQuery = 'insert into account values (?, ?, 1)';
+    let stringQuery = 'insert into account (username, password, role) values (?, ?, 1)';
     const hashedPassword = await argon2.hash(password);
     console.log(stringQuery);
     this.connection.query({ sql: stringQuery, values: [username, hashedPassword]}, callback);
