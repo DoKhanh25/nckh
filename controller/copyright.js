@@ -349,7 +349,7 @@ registerCopyrightRouter.post('/admin/acceptCopyright', verifyToken, async (req, 
                                 const cid = await ipfsRepository.saveFile(file);
                                 
                                 let bcAsset = {
-                                    assetId: `asset${cid.toString()}`,
+                                    assetId: `asset${new Date().getTime()}`,
                                     title: rs[0].title,
                                     hashValue: cid.toString(),
                                     DOI: generateRandomCode(15),
